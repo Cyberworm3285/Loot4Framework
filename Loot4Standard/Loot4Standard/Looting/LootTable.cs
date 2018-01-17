@@ -8,6 +8,7 @@ namespace Loot4Standard.Looting
     public class LootTable<T> : IEnumerable<KeyValuePair<int, T>>
     {
         private List<KeyValuePair<int, T>> _rarLootPairs;
+        private Random _rand;
 
         private int _length;
         public int Length => _length;
@@ -15,6 +16,7 @@ namespace Loot4Standard.Looting
         public LootTable()
         {
             _length = 0;
+            _rand = new Random();
             _rarLootPairs = new List<KeyValuePair<int, T>>();
         }
 
@@ -66,6 +68,11 @@ namespace Loot4Standard.Looting
             _rarLootPairs.Add(new KeyValuePair<int, T>(_length, value));
         }
 
+        public void AddRange(IEnumerable<KeyValuePair<int, T>> en)
+        {
+            _rarLootPairs.AddRange(en);
+        }
+
         public int RemoveIf(Func<KeyValuePair<int, T>, bool> selector)
         {
             int c = 0;
@@ -92,5 +99,19 @@ namespace Loot4Standard.Looting
         #endregion
 
         public override string ToString() => $"LootTable containing <{typeof(T)}>";
+
+        public T Next() => GetValue(_rand.Next(Length));
+
+        public IEnumerable<T> Generate()
+        {
+            while (true)
+                yield return Next();
+        }
+
+        public IEnumerable<T> Generate(int count)
+        {
+            for (var i = 0; i < count; i++)
+                yield return Next();
+        }
     }
 }

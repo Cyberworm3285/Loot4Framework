@@ -3,6 +3,8 @@ using System.Linq;
 using Loot4Standard.Looting;
 using System.Collections.Generic;
 
+using static Loot4Standard.Extensions.LINQ_Extensions;
+
 namespace Test
 {
     class Program
@@ -41,15 +43,10 @@ namespace Test
             };
 
             var rand = new Random();
-            var rarCounts = dicNames.Values.ToDictionary(x => x, x => 0);
-
-            for (int i = 0; i < 5000000; i++)
-            {
-                var rarity = masterTable[rand.Next(masterTable.Length)];
-                rarCounts[dicNames[rarity]]++;
-                //var item = rarity[rand.Next(rarity.Length)];
-                //Console.WriteLine($"{dicNames[rarity]} :: {item}");
-            }
+            masterTable
+                .Generate(500000)
+                .Select(x => x.Next())
+                .ForEach(Console.WriteLine);
 
             foreach (var x in masterTable.Select(y => $"{y.Key} :: {y.Value}"))
             {
