@@ -44,7 +44,8 @@ namespace Test
 
             var rand = new Random();
             masterTable
-                .Generate(500000)
+                .Generate(500)
+                .ForEach(x => Console.Write(dicNames[x] + "::"))
                 .Select(x => x.Next())
                 .ForEach(Console.WriteLine);
 
@@ -54,6 +55,14 @@ namespace Test
             }
 
             Console.ReadKey();
+        }
+    }
+
+    static class Extensions
+    {
+        public static void TreeWrite<T>(this LootTable<T> lt)
+        {
+
         }
     }
 }

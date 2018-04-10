@@ -3,15 +3,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
+using System.Linq;
+
 namespace Loot4Standard.Looting
 {
     public class LootTable<T> : IEnumerable<KeyValuePair<int, T>>
     {
         private List<KeyValuePair<int, T>> _rarLootPairs;
+        private List<KeyValuePair<int, T>> _sortedRarLootPairs;
         private Random _rand;
 
         private int _length;
         public int Length => _length;
+
+        #region Constructors
 
         public LootTable()
         {
@@ -41,17 +46,26 @@ namespace Loot4Standard.Looting
             }
         }
 
-        public T GetValue(int value) => GetValue(value, 0, _rarLootPairs.Count - 1);
+        #endregion
 
-        private T GetValue(int value, int min, int max)
+        public void Filter(Func<KeyValuePair<int, T>, bool> selector)
+            => _sortedRarLootPairs = _rarLootPairs
+                                        .Where(selector)
+                                        .ToList();
+
+        public T GetFilteredValue(int value) => GetValue(value, 0, _sortedRarLootPairs.Count - 1, ref _sortedRarLootPairs);
+
+        public T GetValue(int value) => GetValue(value, 0, _rarLootPairs.Count - 1, ref _rarLootPairs);
+
+        private T GetValue(int value, int min, int max, ref List<KeyValuePair<int, T>> items)
         {
             int piv = (min + max) / 2;
-            if (value < _rarLootPairs[piv].Key)
-                if (piv == 0 || value >= _rarLootPairs[piv - 1].Key)
-                    return _rarLootPairs[piv].Value;
+            if (value < items[piv].Key)
+                if (piv == 0 || value >= items[piv - 1].Key)
+                    return items[piv].Value;
                 else
-                    return GetValue(value, min, piv);
-            else return GetValue(value, piv + 1, max);
+                    return GetValue(value, min, piv, ref items);
+            else return GetValue(value, piv + 1, max, ref items);
         }
 
         public T this[int value] => GetValue(value);
@@ -73,28 +87,36 @@ namespace Loot4Standard.Looting
             _rarLootPairs.AddRange(en);
         }
 
+        /// <summary>
+        /// Bad performance => avoid
+        /// </summary>
         public int RemoveIf(Func<KeyValuePair<int, T>, bool> selector)
         {
             int c = 0;
+            int deleted = 0;
             for (int i = 0; i < _rarLootPairs.Count;)
             {
                 if (selector(_rarLootPairs[i]))
                 {
                     _length -= _rarLootPairs[i].Key;
+                    deleted += _rarLootPairs[i].Key;
                     _rarLootPairs.RemoveAt(i);
                     c++;
                 }
                 else
+                {
                     i++;
+                    _rarLootPairs[i] = new KeyValuePair<int, T>(_rarLootPairs[i].Key - deleted, _rarLootPairs[i].Value);
+                }
             }
             return c;
         }
 
         #region IEnumerable
 
-        IEnumerator<KeyValuePair<int, T>> IEnumerable<KeyValuePair<int, T>>.GetEnumerator() => new LootTableEnumerator<T>(_rarLootPairs);
+        IEnumerator<KeyValuePair<int, T>> IEnumerable<KeyValuePair<int, T>>.GetEnumerator() => this._rarLootPairs.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => new LootTableEnumerator<T>(_rarLootPairs);
+        IEnumerator IEnumerable.GetEnumerator() => this._rarLootPairs.GetEnumerator();
 
         #endregion
 
